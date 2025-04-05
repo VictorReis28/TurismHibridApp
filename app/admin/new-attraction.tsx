@@ -31,13 +31,26 @@ export default function NewAttraction() {
 
   const pickImage = async () => {
     try {
+      // Solicitar permissões antes de abrir a galeria
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permissão necessária',
+          'Precisamos de acesso à galeria para continuar.'
+        );
+        return;
+      }
+
+      // Abrir a galeria de imagens
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Certifique-se de usar o valor correto
         allowsEditing: true,
         aspect: [16, 9],
         quality: 1,
       });
 
+      // Verificar se o usuário cancelou a seleção
       if (!result.canceled) {
         setForm((prev) => ({ ...prev, image: result.assets[0].uri }));
       }
@@ -48,7 +61,7 @@ export default function NewAttraction() {
   };
 
   const handleSubmit = async () => {
-    // Validate required fields (excluding image)
+    // Validar campos obrigatórios (exceto imagem)
     if (
       !form.name ||
       !form.description ||
@@ -60,7 +73,7 @@ export default function NewAttraction() {
       return;
     }
 
-    // Validate coordinates
+    // Validar coordenadas
     const lat = parseFloat(form.latitude);
     const lng = parseFloat(form.longitude);
     if (
@@ -75,23 +88,23 @@ export default function NewAttraction() {
       return;
     }
 
-    // If no image is selected, use a default placeholder
+    // Se nenhuma imagem for selecionada, usar um placeholder padrão
     const newAttraction = {
       ...form,
       image: form.image || require('@/assets/images/AtNotFound.png'),
     };
 
     try {
-      // Retrieve existing attractions
+      // Recuperar atrações existentes
       const storedAttractions = await AsyncStorage.getItem('attractions');
       const attractions = storedAttractions
         ? JSON.parse(storedAttractions)
         : [];
 
-      // Add the new attraction
+      // Adicionar a nova atração
       attractions.push(newAttraction);
 
-      // Save updated attractions
+      // Salvar as atrações atualizadas
       await AsyncStorage.setItem('attractions', JSON.stringify(attractions));
 
       Alert.alert('Sucesso', 'Atração cadastrada com sucesso!');
@@ -116,7 +129,7 @@ export default function NewAttraction() {
       </View>
 
       <ScrollView style={styles.form}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.imageUpload, { backgroundColor: theme.colors.card }]}
           onPress={pickImage}
         >
@@ -136,7 +149,7 @@ export default function NewAttraction() {
               Toque para adicionar uma imagem
             </Text>
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TextInput
           style={[
