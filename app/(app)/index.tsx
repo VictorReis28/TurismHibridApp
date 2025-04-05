@@ -1,20 +1,40 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable, Platform, TextInput, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  RefreshControl,
+  Pressable,
+  Platform,
+  TextInput,
+} from 'react-native';
 import { Image } from 'expo-image';
-import { Star, Navigation, Search, Filter, FileSliders as Sliders } from 'lucide-react-native';
+import {
+  Star,
+  Navigation,
+  Search,
+  FileSliders as Sliders,
+} from 'lucide-react-native';
 import * as Location from 'expo-location';
-import Animated, { 
-  FadeInDown, 
+import Animated, {
+  FadeInDown,
   FadeOut,
   withSpring,
   useAnimatedStyle,
-  useSharedValue
+  useSharedValue,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeStore } from '@/stores/theme';
 import { darkTheme, lightTheme } from '@/styles/theme';
-import { attractions, categories, calculateDistance, type Attraction } from '@/components/data/attractions';
+import {
+  attractions,
+  categories,
+  calculateDistance,
+  type Attraction,
+} from '@/components/data/attractions';
 import { homeStyles } from '@/styles/screens/app/home.styles';
+import { router } from 'expo-router';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,7 +49,9 @@ const DISTANCE_FILTERS = [
 export default function HomeScreen() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const theme = isDarkMode ? darkTheme : lightTheme;
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,17 +92,25 @@ export default function HomeScreen() {
     overflow: 'hidden',
   }));
 
-  const renderAttractionCard = ({ item, index }: { item: Attraction; index: number }) => {
+  const renderAttractionCard = ({
+    item,
+    index,
+  }: {
+    item: Attraction;
+    index: number;
+  }) => {
     const distance = calculateDistance(location, item);
     if (selectedDistance && distance > selectedDistance) {
       return null;
     }
 
     return (
-      <AnimatedPressable 
+      <AnimatedPressable
         style={[homeStyles.card]}
         entering={FadeInDown.delay(index * 100)}
-        exiting={FadeOut}>
+        exiting={FadeOut}
+        onPress={() => router.push(`/attractions/${item.id}`)}
+      >
         <Image
           source={{ uri: item.image }}
           style={homeStyles.image}
@@ -103,13 +133,13 @@ export default function HomeScreen() {
             <View style={homeStyles.rating}>
               <Star size={16} color="#FFD700" fill="#FFD700" />
               <Text style={homeStyles.ratingText}>{item.rating}</Text>
-              <Text style={homeStyles.reviewCount}>({item.reviews.toLocaleString()} avaliações)</Text>
+              <Text style={homeStyles.reviewCount}>
+                ({item.reviews.toLocaleString()} avaliações)
+              </Text>
             </View>
             <View style={homeStyles.distance}>
               <Navigation size={16} color="#fff" />
-              <Text style={homeStyles.distanceText}>
-                {distance} km
-              </Text>
+              <Text style={homeStyles.distanceText}>{distance} km</Text>
             </View>
           </View>
         </View>
@@ -122,33 +152,44 @@ export default function HomeScreen() {
       onPress={() => setSelectedCategory(item)}
       style={[
         homeStyles.categoryButton,
-        selectedCategory === item && { backgroundColor: theme.colors.primary }
-      ]}>
+        selectedCategory === item && { backgroundColor: theme.colors.primary },
+      ]}
+    >
       <Text
         style={[
           homeStyles.categoryButtonText,
-          selectedCategory === item && { color: '#fff' }
-        ]}>
+          selectedCategory === item && { color: '#fff' },
+        ]}
+      >
         {item}
       </Text>
     </Pressable>
   );
 
   const filteredAttractions = attractions
-    .filter(attraction => 
-      selectedCategory === 'Todos' || attraction.category === selectedCategory
+    .filter(
+      (attraction) =>
+        selectedCategory === 'Todos' || attraction.category === selectedCategory
     )
-    .filter(attraction =>
-      searchQuery === '' || 
-      attraction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      attraction.description.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      (attraction) =>
+        searchQuery === '' ||
+        attraction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        attraction.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   return (
-    <View style={[homeStyles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[
+        homeStyles.container,
+        { backgroundColor: theme.colors.background },
+      ]}
+    >
       <View style={homeStyles.header}>
         <View style={homeStyles.headerTop}>
-          <Text style={[homeStyles.title, { color: theme.colors.text }]}>Descobrir</Text>
+          <Text style={[homeStyles.title, { color: theme.colors.text }]}>
+            Descobrir
+          </Text>
           <View style={homeStyles.headerButtons}>
             <Pressable onPress={toggleSearch} style={homeStyles.iconButton}>
               <Search size={24} color={theme.colors.text} />
@@ -158,7 +199,9 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-        <Text style={[homeStyles.subtitle, { color: theme.colors.textSecondary }]}>
+        <Text
+          style={[homeStyles.subtitle, { color: theme.colors.textSecondary }]}
+        >
           Explore atrações próximas
         </Text>
       </View>
@@ -166,7 +209,10 @@ export default function HomeScreen() {
       <Animated.View style={[homeStyles.searchBar, searchBarStyle]}>
         <TextInput
           placeholder="Buscar atrações..."
-          style={[homeStyles.searchInput, { backgroundColor: theme.colors.surface }]}
+          style={[
+            homeStyles.searchInput,
+            { backgroundColor: theme.colors.surface },
+          ]}
           placeholderTextColor={theme.colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -191,8 +237,8 @@ export default function HomeScreen() {
         contentContainerStyle={homeStyles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={theme.colors.primary}
           />
@@ -200,8 +246,15 @@ export default function HomeScreen() {
       />
 
       {showFilters && (
-        <View style={[homeStyles.filtersModal, { backgroundColor: theme.colors.card }]}>
-          <Text style={[homeStyles.filtersTitle, { color: theme.colors.text }]}>Filtros</Text>
+        <View
+          style={[
+            homeStyles.filtersModal,
+            { backgroundColor: theme.colors.card },
+          ]}
+        >
+          <Text style={[homeStyles.filtersTitle, { color: theme.colors.text }]}>
+            Filtros
+          </Text>
           <View style={{ gap: 8 }}>
             {DISTANCE_FILTERS.map((filter) => (
               <TouchableOpacity
@@ -210,18 +263,26 @@ export default function HomeScreen() {
                   {
                     padding: 12,
                     borderRadius: 8,
-                    backgroundColor: selectedDistance === filter.value ? theme.colors.primary : theme.colors.surface,
+                    backgroundColor:
+                      selectedDistance === filter.value
+                        ? theme.colors.primary
+                        : theme.colors.surface,
                   },
                 ]}
                 onPress={() => {
                   setSelectedDistance(filter.value);
                   setShowFilters(false);
-                }}>
+                }}
+              >
                 <Text
                   style={{
-                    color: selectedDistance === filter.value ? '#fff' : theme.colors.text,
+                    color:
+                      selectedDistance === filter.value
+                        ? '#fff'
+                        : theme.colors.text,
                     fontFamily: 'Inter_600SemiBold',
-                  }}>
+                  }}
+                >
                   {filter.label}
                 </Text>
               </TouchableOpacity>

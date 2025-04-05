@@ -43,6 +43,9 @@ export const mapStyles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_600SemiBold',
     marginTop: 4,
   },
+  attractionsList: {
+    flex: 1,
+  },
   attractionItem: {
     flexDirection: 'row',
     padding: 16,

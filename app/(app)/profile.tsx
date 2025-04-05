@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useThemeStore } from '@/stores/theme';
@@ -12,6 +12,8 @@ import {
   Bell,
   Globe,
   LogOut,
+  Fingerprint,
+  Settings,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth';
 import { router } from 'expo-router';
@@ -22,7 +24,14 @@ export default function ProfileScreen() {
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const theme = isDarkMode ? darkTheme : lightTheme;
   const [image, setImage] = useState<string | null>(null);
-  const { logout } = useAuthStore();
+  const {
+    user,
+    logout,
+    loginWithBiometrics,
+    updateUserAvatar,
+    toggleBiometrics,
+    isBiometricsEnabled,
+  } = useAuthStore();
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -33,6 +42,7 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled) {
+      await updateUserAvatar(result.assets[0].uri);
       setImage(result.assets[0].uri);
     }
   };
@@ -45,6 +55,7 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled) {
+      await updateUserAvatar(result.assets[0].uri);
       setImage(result.assets[0].uri);
     }
   };
@@ -52,6 +63,14 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     await logout();
     router.replace('/(auth)/login');
+  };
+
+  const handleBiometricsToggle = async () => {
+    try {
+      await toggleBiometrics();
+    } catch (error: any) {
+      Alert.alert('Erro', error.message);
+    }
   };
 
   const MenuItem = ({ icon: Icon, title, onPress, value }: any) => (
@@ -100,7 +119,9 @@ export default function ProfileScreen() {
         <View style={profileStyles.avatarContainer}>
           <Image
             source={
-              image ? { uri: image } : require('@/assets/images/profile.jpg')
+              user?.avatar
+                ? { uri: user.avatar }
+                : require('@/assets/images/user-profile.png')
             }
             style={profileStyles.avatar}
             contentFit="cover"
@@ -127,12 +148,12 @@ export default function ProfileScreen() {
           </View>
         </View>
         <Text style={[profileStyles.name, { color: theme.colors.text }]}>
-          usuário
+          {user?.name || 'Usuário'}
         </Text>
         <Text
           style={[profileStyles.email, { color: theme.colors.textSecondary }]}
         >
-          usuario.exemplo@gmail.com
+          {user?.email || 'usuario@exemplo.com'}
         </Text>
       </View>
 
@@ -148,13 +169,28 @@ export default function ProfileScreen() {
           onPress={toggleTheme}
           value={isDarkMode ? 'Ativado' : 'Desativado'}
         />
+        {Platform.OS !== 'web' && (
+          <MenuItem
+            icon={Fingerprint}
+            title="Login Biométrico"
+            onPress={handleBiometricsToggle}
+            value={isBiometricsEnabled ? 'Ativado' : 'Desativado'}
+          />
+        )}
         <MenuItem icon={Key} title="Alterar Senha" onPress={() => {}} />
         <MenuItem icon={Bell} title="Notificações" onPress={() => {}} />
+        {/*
+        <MenuItem 
+          icon={Globe} 
+          title="Idioma" 
+          value="Português" 
+          onPress={() => {}} 
+        />
+        */}
         <MenuItem
-          icon={Globe}
-          title="Idioma"
-          value="Português"
-          onPress={() => {}}
+          icon={Settings}
+          title="Administração"
+          onPress={() => router.push('/admin')}
         />
       </View>
 

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Dimensions, Pressable } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, Dimensions, Pressable, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useThemeStore } from '@/stores/theme';
@@ -20,8 +20,10 @@ export default function MapScreen() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const theme = isDarkMode ? darkTheme : lightTheme;
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [selectedAttraction, setSelectedAttraction] = useState(attractions[0]);
   const bottomSheetHeight = useSharedValue(height * 0.3);
   const isExpanded = useSharedValue(false);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -39,6 +41,26 @@ export default function MapScreen() {
     isExpanded.value = !isExpanded.value;
   };
 
+  const handleMarkerPress = (attraction) => {
+    setSelectedAttraction(attraction);
+    mapRef.current?.animateToRegion({
+      latitude: attraction.coordinates.latitude,
+      longitude: attraction.coordinates.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  };
+
+  const handleAttractionPress = (attraction) => {
+    setSelectedAttraction(attraction);
+    mapRef.current?.animateToRegion({
+      latitude: attraction.coordinates.latitude,
+      longitude: attraction.coordinates.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  };
+
   const bottomSheetStyle = useAnimatedStyle(() => ({
     height: bottomSheetHeight.value,
   }));
@@ -46,33 +68,21 @@ export default function MapScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Map
+        ref={mapRef}
         style={styles.map}
-        location={
-          location
-            ? {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-              }
-            : undefined
-        }
-        markers={[
-          ...(location
-            ? [
-                {
-                  id: 'current',
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude,
-                  title: 'Você está aqui',
-                },
-              ]
-            : []),
-          ...attractions.map((attraction) => ({
-            id: attraction.id,
-            latitude: attraction.coordinates.latitude,
-            longitude: attraction.coordinates.longitude,
-            title: attraction.name,
-          })),
-        ]}
+        initialRegion={{
+          latitude: selectedAttraction.coordinates.latitude,
+          longitude: selectedAttraction.coordinates.longitude,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        }}
+        markers={attractions.map((attraction) => ({
+          id: attraction.id,
+          latitude: attraction.coordinates.latitude,
+          longitude: attraction.coordinates.longitude,
+          title: attraction.name,
+          onPress: () => handleMarkerPress(attraction),
+        }))}
       />
 
       <Animated.View
@@ -85,47 +95,54 @@ export default function MapScreen() {
           <View style={[styles.bottomSheetHandle, { backgroundColor: theme.colors.border }]} />
           <ChevronUp size={24} color={theme.colors.text} />
           <Text style={[styles.bottomSheetTitle, { color: theme.colors.text }]}>
-            Melhores Atrações Próximas
+            Atrações Turísticas
           </Text>
         </Pressable>
 
-        {attractions.map((attraction) => {
-          const distance = calculateDistance(location, attraction);
+        <ScrollView style={styles.attractionsList}>
+          {attractions.map((attraction) => {
+            const distance = calculateDistance(location, attraction);
+            const isSelected = selectedAttraction.id === attraction.id;
 
-          return (
-            <Pressable
-              key={attraction.id}
-              style={[
-                styles.attractionItem,
-                { borderBottomColor: theme.colors.border }
-              ]}>
-              <Image
-                source={{ uri: attraction.image }}
-                style={styles.attractionImage}
-                contentFit="cover"
-              />
-              <View style={styles.attractionInfo}>
-                <Text style={[styles.attractionName, { color: theme.colors.text }]}>
-                  {attraction.name}
-                </Text>
-                <View style={styles.attractionDetails}>
-                  <View style={styles.rating}>
-                    <Star size={16} color="#FFD700" fill="#FFD700" />
-                    <Text style={[styles.ratingText, { color: theme.colors.text }]}>
-                      {attraction.rating}
-                    </Text>
-                  </View>
-                  <View style={styles.distance}>
-                    <Navigation size={16} color={theme.colors.textSecondary} />
-                    <Text style={[styles.distanceText, { color: theme.colors.textSecondary }]}>
-                      {distance} km
-                    </Text>
+            return (
+              <Pressable
+                key={attraction.id}
+                style={[
+                  styles.attractionItem,
+                  { 
+                    borderBottomColor: theme.colors.border,
+                    backgroundColor: isSelected ? theme.colors.surface : 'transparent'
+                  }
+                ]}
+                onPress={() => handleAttractionPress(attraction)}>
+                <Image
+                  source={{ uri: attraction.image }}
+                  style={styles.attractionImage}
+                  contentFit="cover"
+                />
+                <View style={styles.attractionInfo}>
+                  <Text style={[styles.attractionName, { color: theme.colors.text }]}>
+                    {attraction.name}
+                  </Text>
+                  <View style={styles.attractionDetails}>
+                    <View style={styles.rating}>
+                      <Star size={16} color="#FFD700" fill="#FFD700" />
+                      <Text style={[styles.ratingText, { color: theme.colors.text }]}>
+                        {attraction.rating}
+                      </Text>
+                    </View>
+                    <View style={styles.distance}>
+                      <Navigation size={16} color={theme.colors.textSecondary} />
+                      <Text style={[styles.distanceText, { color: theme.colors.textSecondary }]}>
+                        {distance} km
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Pressable>
-          );
-        })}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </Animated.View>
     </View>
   );

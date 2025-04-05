@@ -4,11 +4,11 @@ import { StyleSheet, Text, View } from 'react-native';
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
+      <Stack.Screen options={{ title: 'Ops!' }} />
       <View style={styles.container}>
-        <Text style={styles.text}>Ainda estamos trabalhando nessa tela.</Text>
+        <Text style={styles.text}>Esta tela não existe.</Text>
         <Link href="/" style={styles.link}>
-            <Text>Vá para a tela inicial!</Text>
+          <Text>Volte para a tela inicial!</Text>
         </Link>
       </View>
     </>

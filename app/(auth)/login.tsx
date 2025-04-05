@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { Fingerprint } from 'lucide-react-native';
@@ -11,7 +19,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [biometricsAvailable, setBiometricsAvailable] = useState(false);
-  const { login, loginWithBiometrics, checkBiometricsAvailable } = useAuthStore();
+  const { login, loginWithBiometrics, checkBiometricsAvailable } =
+    useAuthStore();
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const theme = isDarkMode ? darkTheme : lightTheme;
 
@@ -22,6 +31,11 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       setError('');
+      if (!email && !password && biometricsAvailable) {
+        await handleBiometricLogin();
+        return;
+      }
+
       if (!email || !password) {
         setError('Por favor, preencha todos os campos');
         return;
@@ -44,57 +58,73 @@ export default function Login() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Bem-vindo de volta</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <Text style={[styles.title, { color: theme.colors.text }]}>
+        Bem-vindo de Volta
+      </Text>
       <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
         Entre para continuar explorando
       </Text>
 
       <View style={styles.form}>
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
-        
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <TextInput
-          style={[styles.input, { 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            color: theme.colors.text
-          }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+            },
+          ]}
           placeholder="Email"
           placeholderTextColor={theme.colors.textSecondary}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          onSubmitEditing={handleLogin}
         />
         <TextInput
-          style={[styles.input, { 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            color: theme.colors.text
-          }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+            },
+          ]}
           placeholder="Senha"
           placeholderTextColor={theme.colors.textSecondary}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          onSubmitEditing={handleLogin}
         />
 
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: theme.colors.primary }]} 
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: theme.colors.primary }]}
           onPress={handleLogin}
         >
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
 
         {biometricsAvailable && (
-          <TouchableOpacity 
-            style={[styles.biometricButton, { backgroundColor: theme.colors.surface }]} 
+          <TouchableOpacity
+            style={[
+              styles.biometricButton,
+              { backgroundColor: theme.colors.surface },
+            ]}
             onPress={handleBiometricLogin}
           >
             <Fingerprint size={24} color={theme.colors.primary} />
-            <Text style={[styles.biometricText, { color: theme.colors.primary }]}>
+            <Text
+              style={[styles.biometricText, { color: theme.colors.primary }]}
+            >
               Entrar com biometria
             </Text>
           </TouchableOpacity>
@@ -113,7 +143,7 @@ export default function Login() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
