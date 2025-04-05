@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -16,7 +16,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/auth';
 import { Image } from 'expo-image';
 import { View, StyleSheet } from 'react-native';
-import Animated, { FadeOut } from 'react-native-reanimated';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -30,7 +29,19 @@ export default function RootLayout() {
     PlusJakartaSans_600SemiBold,
   });
 
-  if (!fontsLoaded) {
+  const [showSplash, setShowSplash] = useState(true); // Estado para controlar a splash screen
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      const timer = setTimeout(() => {
+        setShowSplash(false); // Oculta a splash screen após 3 segundos
+      }, 3000);
+
+      return () => clearTimeout(timer); // Limpa o timer ao desmontar o componente
+    }
+  }, [fontsLoaded]);
+
+  if (showSplash) {
     return (
       <View style={styles.splashContainer}>
         <Image
