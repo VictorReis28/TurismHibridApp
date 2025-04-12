@@ -14,10 +14,14 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/auth';
-
+import { useLocationStore } from '@/stores/location'; // Importação adicionada
+ 
 export default function RootLayout() {
   useFrameworkReady();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const initializeLocation = useLocationStore(
+    (state) => state.initializeLocation
+  ); // Inicialização da localização
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -26,6 +30,10 @@ export default function RootLayout() {
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
   });
+
+  useEffect(() => {
+    initializeLocation(); // Chama a função para carregar a localização
+  }, []);
 
   if (!fontsLoaded) {
     return null; // Aguarda o carregamento das fontes

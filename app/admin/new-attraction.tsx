@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,19 @@ import {
   StyleSheet,
   Alert,
   Dimensions,
-  ActivityIndicator,
 } from 'react-native';
-import * as Location from 'expo-location'; // Importa a biblioteca de localização
 import { useThemeStore } from '@/stores/theme';
 import { useLocationStore } from '@/stores/location';
 import { darkTheme, lightTheme } from '@/styles/theme';
 import { router } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
-import { ArrowLeft } from 'lucide-react-native'; // Importa o ícone de seta
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function NewAttraction() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const theme = isDarkMode ? darkTheme : lightTheme;
 
-  const preloadedLocation = useLocationStore((state) => state.location); // Obtém a localização pré-carregada
+  const preloadedLocation = useLocationStore((state) => state.location);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -31,42 +29,6 @@ export default function NewAttraction() {
     latitude: preloadedLocation?.latitude?.toString() || '0',
     longitude: preloadedLocation?.longitude?.toString() || '0',
   });
-
-  const [loadingLocation, setLoadingLocation] = useState(!preloadedLocation);
-
-  useEffect(() => {
-    if (!preloadedLocation) {
-      const getCurrentLocation = async () => {
-        try {
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== 'granted') {
-            Alert.alert(
-              'Permissão necessária',
-              'Precisamos de acesso à sua localização para continuar.'
-            );
-            setLoadingLocation(false);
-            return;
-          }
-
-          const location = await Location.getCurrentPositionAsync({});
-          setForm((prev) => ({
-            ...prev,
-            latitude: location.coords.latitude.toString(),
-            longitude: location.coords.longitude.toString(),
-          }));
-        } catch (error) {
-          console.error('Erro ao obter localização:', error);
-          Alert.alert('Erro', 'Não foi possível obter sua localização.');
-        } finally {
-          setLoadingLocation(false);
-        }
-      };
-
-      getCurrentLocation();
-    } else {
-      setLoadingLocation(false);
-    }
-  }, [preloadedLocation]);
 
   const handleRegionChange = (region) => {
     setForm((prev) => ({
@@ -125,23 +87,13 @@ export default function NewAttraction() {
     }
   };
 
-  if (loadingLocation) {
-    return (
-      <View
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
-      >
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color={theme.colors.text} />
+          <Text style={{ color: theme.colors.text }}>Voltar</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>
           Nova Atração
@@ -230,46 +182,6 @@ export default function NewAttraction() {
           }
         />
 
-        <View style={styles.coordinates}>
-          <TextInput
-            style={[
-              styles.input,
-              styles.coordinateInput,
-              {
-                backgroundColor: theme.colors.card,
-                color: theme.colors.text,
-                borderColor: theme.colors.border,
-              },
-            ]}
-            placeholder="Latitude"
-            placeholderTextColor={theme.colors.textSecondary}
-            keyboardType="numeric"
-            value={parseFloat(form.latitude).toFixed(5)} // Mostra apenas 5 casas decimais
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, latitude: text }))
-            }
-          />
-
-          <TextInput
-            style={[
-              styles.input,
-              styles.coordinateInput,
-              {
-                backgroundColor: theme.colors.card,
-                color: theme.colors.text,
-                borderColor: theme.colors.border,
-              },
-            ]}
-            placeholder="Longitude"
-            placeholderTextColor={theme.colors.textSecondary}
-            keyboardType="numeric"
-            value={parseFloat(form.longitude).toFixed(5)} // Mostra apenas 5 casas decimais
-            onChangeText={(text) =>
-              setForm((prev) => ({ ...prev, longitude: text }))
-            }
-          />
-        </View>
-
         <TouchableOpacity
           style={[
             styles.submitButton,
@@ -293,31 +205,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    gap: 16,
   },
   title: {
     fontSize: 24,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontWeight: 'bold',
   },
   form: {
     padding: 20,
   },
-  coordinates: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  coordinateInput: {
-    flex: 1,
-    marginBottom: 0,
-  },
   mapContainer: {
     height: 200,
-    width: Dimensions.get('window').width - 40,
     marginBottom: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    alignSelf: 'center',
   },
   map: {
     flex: 1,
@@ -325,27 +223,22 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 15,
   },
   textArea: {
-    height: 120,
-    paddingTop: 12,
-    paddingBottom: 12,
+    height: 100,
     textAlignVertical: 'top',
   },
   submitButton: {
     height: 50,
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
+    fontWeight: 'bold',
   },
 });
