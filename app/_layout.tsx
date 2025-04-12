@@ -14,8 +14,6 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/auth';
-import { Image } from 'expo-image';
-import { View, StyleSheet } from 'react-native';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -29,28 +27,8 @@ export default function RootLayout() {
     PlusJakartaSans_600SemiBold,
   });
 
-  const [showSplash, setShowSplash] = useState(true); // Estado para controlar a splash screen
-
-  useEffect(() => {
-    if (fontsLoaded) {
-      const timer = setTimeout(() => {
-        setShowSplash(false); // Oculta a splash screen após 3 segundos
-      }, 3000);
-
-      return () => clearTimeout(timer); // Limpa o timer ao desmontar o componente
-    }
-  }, [fontsLoaded]);
-
-  if (showSplash) {
-    return (
-      <View style={styles.splashContainer}>
-        <Image
-          source={require('../assets/images/Splash.gif')}
-          style={styles.splashImage}
-          contentFit="contain" // ou "contain", dependendo do comportamento desejado
-        />
-      </View>
-    );
+  if (!fontsLoaded) {
+    return null; // Aguarda o carregamento das fontes
   }
 
   return (
@@ -65,18 +43,3 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  splashContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0d1d37', // Substitua por um tom de azul que combine com a imagem
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  splashImage: {
-    width: '85%',
-    height: '85%',
-    resizeMode: 'contain', // ou 'contain', dependendo do comportamento desejado
-  },
-});

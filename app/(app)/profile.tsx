@@ -116,7 +116,12 @@ export default function ProfileScreen() {
       </View>
 
       <View style={profileStyles.profileSection}>
-        <View style={profileStyles.avatarContainer}>
+        <View
+          style={[
+            profileStyles.avatarContainer,
+            { borderColor: isDarkMode ? '#FFF' : '#000' }, // Moldura com base no tema
+          ]}
+        >
           <Image
             source={
               user?.avatar
@@ -179,7 +184,7 @@ export default function ProfileScreen() {
         )}
         <MenuItem icon={Key} title="Alterar Senha" onPress={() => {}} />
         <MenuItem icon={Bell} title="Notificações" onPress={() => {}} />
-        {/*
+        {/* 
         <MenuItem 
           icon={Globe} 
           title="Idioma" 
