@@ -1,18 +1,51 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useThemeStore } from '@/stores/theme';
+import { useLocationStore } from '@/stores/location'; // Importa o store de localização
 import { darkTheme, lightTheme } from '@/styles/theme';
 import { CirclePlus as PlusCircle, Trash2 } from 'lucide-react-native';
+import * as Location from 'expo-location'; // Importa a API de localização
 
 export default function AdminScreen() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const theme = isDarkMode ? darkTheme : lightTheme;
 
+  const setLocation = useLocationStore((state) => state.setLocation); // Função para atualizar a localização no store
+
+  useEffect(() => {
+    const preloadLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permissão necessária',
+            'Precisamos de acesso à sua localização para continuar.'
+          );
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        console.error('Erro ao pré-carregar localização:', error);
+      }
+    };
+
+    preloadLocation();
+  }, []);
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Administração</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Administração
+        </Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Gerencie as atrações turísticas
         </Text>
