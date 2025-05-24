@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -14,14 +14,14 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/auth';
-import { useLocationStore } from '@/stores/location'; // Importação adicionada
- 
+import { useLocationStore } from '@/stores/location';
+
 export default function RootLayout() {
   useFrameworkReady();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const initializeLocation = useLocationStore(
     (state) => state.initializeLocation
-  ); // Inicialização da localização
+  );
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -32,11 +32,11 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    initializeLocation(); // Chama a função para carregar a localização
+    initializeLocation();
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Aguarda o carregamento das fontes
+    return null;
   }
 
   return (

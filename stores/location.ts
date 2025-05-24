@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 
 export const useLocationStore = create((set) => ({
   location: null,
+  setLocation: (location) => set({ location }),
   initializeLocation: async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();

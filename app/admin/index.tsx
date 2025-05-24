@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useThemeStore } from '@/stores/theme';
-import { useLocationStore } from '@/stores/location'; // Importa o store de localização
+import { useLocationStore } from '@/stores/location';
 import { darkTheme, lightTheme } from '@/styles/theme';
 import { CirclePlus as PlusCircle, Trash2 } from 'lucide-react-native';
-import * as Location from 'expo-location'; // Importa a API de localização
+import * as Location from 'expo-location';
 
 export default function AdminScreen() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);

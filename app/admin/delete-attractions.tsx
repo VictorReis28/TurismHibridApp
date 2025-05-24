@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useThemeStore } from '@/stores/theme';
 import { darkTheme, lightTheme } from '@/styles/theme';
@@ -10,7 +16,9 @@ import { Check, ArrowLeft } from 'lucide-react-native';
 export default function DeleteAttractionsScreen() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const theme = isDarkMode ? darkTheme : lightTheme;
-  const [selectedAttractions, setSelectedAttractions] = useState<Set<string>>(new Set());
+  const [selectedAttractions, setSelectedAttractions] = useState<Set<string>>(
+    new Set()
+  );
 
   const toggleSelection = (id: string) => {
     const newSelection = new Set(selectedAttractions);
@@ -29,12 +37,16 @@ export default function DeleteAttractionsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Remover Atrações</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Remover Atrações
+        </Text>
       </View>
 
       <ScrollView style={styles.list}>
@@ -51,20 +63,34 @@ export default function DeleteAttractionsScreen() {
             ]}
             onPress={() => toggleSelection(attraction.id)}
           >
-            <Image source={{ uri: attraction.image }} style={styles.image} contentFit="cover" />
+            <Image
+              source={{ uri: attraction.image }}
+              style={styles.image}
+              contentFit="cover"
+            />
             <View style={styles.attractionInfo}>
-              <Text style={[styles.attractionName, { color: theme.colors.text }]}>
+              <Text
+                style={[styles.attractionName, { color: theme.colors.text }]}
+              >
                 {attraction.name}
               </Text>
               <Text
-                style={[styles.attractionCategory, { color: theme.colors.textSecondary }]}
+                style={[
+                  styles.attractionCategory,
+                  { color: theme.colors.textSecondary },
+                ]}
                 numberOfLines={1}
               >
                 {attraction.category}
               </Text>
             </View>
             {selectedAttractions.has(attraction.id) && (
-              <View style={[styles.checkmark, { backgroundColor: theme.colors.primary }]}>
+              <View
+                style={[
+                  styles.checkmark,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+              >
                 <Check size={16} color="#FFF" />
               </View>
             )}
@@ -78,13 +104,17 @@ export default function DeleteAttractionsScreen() {
           onPress={handleDelete}
           disabled={selectedAttractions.size === 0}
         >
-          <Text style={styles.buttonText}>Excluir ({selectedAttractions.size})</Text>
+          <Text style={styles.buttonText}>
+            Excluir ({selectedAttractions.size})
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: theme.colors.surface }]}
           onPress={() => router.back()}
         >
-          <Text style={[styles.buttonText, { color: theme.colors.text }]}>Cancelar</Text>
+          <Text style={[styles.buttonText, { color: theme.colors.text }]}>
+            Cancelar
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
