@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
@@ -21,6 +27,7 @@ export default function Register() {
         setError('Por favor, preencha todos os campos');
         return;
       }
+      // A store já faz chamada à API
       await register(email, password, name);
       router.replace('/(app)');
     } catch (error: any) {
@@ -29,36 +36,44 @@ export default function Register() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Criar Conta</Text>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <Text style={[styles.title, { color: theme.colors.text }]}>
+        Criar Conta
+      </Text>
       <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
         Cadastre-se para começar a explorar
       </Text>
 
       <View style={styles.form}>
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
-        
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <TextInput
-          style={[styles.input, { 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            color: theme.colors.text
-          }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+            },
+          ]}
           placeholder="Nome"
           placeholderTextColor={theme.colors.textSecondary}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
         />
-        
+
         <TextInput
-          style={[styles.input, { 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            color: theme.colors.text
-          }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+            },
+          ]}
           placeholder="Email"
           placeholderTextColor={theme.colors.textSecondary}
           value={email}
@@ -68,11 +83,14 @@ export default function Register() {
         />
 
         <TextInput
-          style={[styles.input, { 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            color: theme.colors.text
-          }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+            },
+          ]}
           placeholder="Senha"
           placeholderTextColor={theme.colors.textSecondary}
           value={password}
@@ -80,8 +98,8 @@ export default function Register() {
           secureTextEntry
         />
 
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: theme.colors.primary }]} 
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: theme.colors.primary }]}
           onPress={handleRegister}
         >
           <Text style={styles.buttonText}>Criar Conta</Text>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@/stores/theme';
 import { darkTheme, lightTheme } from '@/styles/theme';
 import { Image } from 'expo-image';
-import { attractions } from '@/components/data/attractions';
+import { fetchAttractions } from '@/components/data/attractions';
 import { Check, ArrowLeft } from 'lucide-react-native';
 
 export default function DeleteAttractionsScreen() {
@@ -19,6 +19,7 @@ export default function DeleteAttractionsScreen() {
   const [selectedAttractions, setSelectedAttractions] = useState<Set<string>>(
     new Set()
   );
+  const [attractions, setAttractions] = useState([]);
 
   const toggleSelection = (id: string) => {
     const newSelection = new Set(selectedAttractions);
@@ -30,10 +31,27 @@ export default function DeleteAttractionsScreen() {
     setSelectedAttractions(newSelection);
   };
 
-  const handleDelete = () => {
-    // Here you would implement the actual deletion logic
-    console.log('Deleting attractions:', Array.from(selectedAttractions));
-    router.back();
+  useEffect(() => {
+    fetchAttractions().then(setAttractions);
+  }, []);
+
+  const handleDelete = async () => {
+    const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+    try {
+      const res = await fetch(`${API_URL}/attractions`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedAttractions) }),
+      });
+      if (!res.ok) throw new Error('Erro ao excluir atrações');
+      // Recarrega a lista após exclusão
+      const data = await fetchAttractions();
+      setAttractions(data);
+      setSelectedAttractions(new Set());
+      router.back();
+    } catch (err) {
+      alert('Erro ao excluir atrações');
+    }
   };
 
   return (

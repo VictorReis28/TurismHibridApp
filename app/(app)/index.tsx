@@ -26,7 +26,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeStore } from '@/stores/theme';
 import { darkTheme, lightTheme } from '@/styles/theme';
 import {
-  attractions,
+  fetchAttractions,
   categories,
   calculateDistance,
   type Attraction,
@@ -55,6 +55,7 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
+  const [attractions, setAttractions] = useState<Attraction[]>([]);
   const searchBarHeight = useSharedValue(0);
   const searchBarVisible = useSharedValue(false);
 
@@ -68,11 +69,19 @@ export default function HomeScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const data = await fetchAttractions();
+      setAttractions(data);
+    })();
+  }, []);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => {
+    fetchAttractions().then((data) => {
+      setAttractions(data);
       setRefreshing(false);
-    }, 1500);
+    });
   }, []);
 
   const toggleSearch = () => {

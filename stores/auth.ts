@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store';
 import { Alert, Platform } from 'react-native';
 
 interface User {
@@ -24,9 +23,8 @@ interface AuthState {
   updateUserAvatar: (avatarUri: string) => Promise<void>;
 }
 
-const USERS_KEY = 'users';
-const CURRENT_USER_KEY = 'currentUser';
-const BIOMETRICS_ENABLED_KEY = 'biometricsEnabled';
+// URL base da API
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
@@ -35,49 +33,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (email: string, password: string) => {
     try {
-      const usersJson = await SecureStore.getItemAsync(USERS_KEY);
-      const users = usersJson ? JSON.parse(usersJson) : {};
-
-      if (!users[email]) {
-        throw new Error('Usuário não encontrado');
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Usuário ou senha inválidos');
       }
+      const data = await res.json();
+      set({ isAuthenticated: true, user: data.user });
 
-      if (users[email].password !== password) {
-        throw new Error('Senha incorreta');
-      }
+      // Buscar biometria do backend
+      const bioRes = await fetch(`${API_URL}/users/${data.user.id}/biometrics`);
+      const bioData = await bioRes.json();
+      set({ isBiometricsEnabled: !!bioData.enabled });
 
-      const user: User = {
-        id: users[email].id,
-        email,
-        name: users[email].name,
-        avatar: users[email].avatar,
-      };
-
-      await SecureStore.setItemAsync(CURRENT_USER_KEY, JSON.stringify(user));
-      set({ isAuthenticated: true, user });
-
-      const biometricsEnabled = await SecureStore.getItemAsync(`${BIOMETRICS_ENABLED_KEY}_${user.id}`);
-      set({ isBiometricsEnabled: biometricsEnabled === 'true' });
-
-      if (!biometricsEnabled && Platform.OS !== 'web') {
+      if (!bioData.enabled && Platform.OS !== 'web') {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-        
         if (hasHardware && isEnrolled) {
           Alert.alert(
             'Autenticação Biométrica',
             'Deseja usar sua biometria para fazer login mais rapidamente nas próximas vezes?',
             [
-              {
-                text: 'Agora não',
-                style: 'cancel'
-              },
+              { text: 'Agora não', style: 'cancel' },
               {
                 text: 'Configurar',
                 onPress: async () => {
                   await get().setupBiometrics();
-                }
-              }
+                },
+              },
             ]
           );
         }
@@ -89,31 +76,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   register: async (email: string, password: string, name: string) => {
     try {
-      const usersJson = await SecureStore.getItemAsync(USERS_KEY);
-      const users = usersJson ? JSON.parse(usersJson) : {};
-
-      if (users[email]) {
-        throw new Error('Email já cadastrado');
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Erro ao cadastrar');
       }
-
-      const newUser = {
-        id: Date.now().toString(),
-        email,
-        password,
-        name,
-      };
-
-      users[email] = newUser;
-      await SecureStore.setItemAsync(USERS_KEY, JSON.stringify(users));
-
-      const user: User = {
-        id: newUser.id,
-        email,
-        name,
-      };
-
-      await SecureStore.setItemAsync(CURRENT_USER_KEY, JSON.stringify(user));
-      set({ isAuthenticated: true, user });
+      const data = await res.json();
+      set({ isAuthenticated: true, user: data.user });
     } catch (error: any) {
       throw new Error(error.message || 'Falha no cadastro');
     }
@@ -123,13 +96,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { user } = get();
       if (!user) throw new Error('Usuário não encontrado');
-
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Confirme sua identidade',
       });
-
       if (result.success) {
-        await SecureStore.setItemAsync(`${BIOMETRICS_ENABLED_KEY}_${user.id}`, 'true');
+        await fetch(`${API_URL}/users/${user.id}/biometrics`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: true }),
+        });
         set({ isBiometricsEnabled: true });
         Alert.alert(
           'Sucesso',
@@ -148,19 +123,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { user, isBiometricsEnabled } = get();
       if (!user) throw new Error('Usuário não encontrado');
-
       if (!isBiometricsEnabled) {
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: 'Confirme sua identidade para ativar a biometria',
         });
-
         if (result.success) {
-          await SecureStore.setItemAsync(`${BIOMETRICS_ENABLED_KEY}_${user.id}`, 'true');
+          await fetch(`${API_URL}/users/${user.id}/biometrics`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: true }),
+          });
           set({ isBiometricsEnabled: true });
           Alert.alert('Sucesso', 'Autenticação biométrica ativada!');
         }
       } else {
-        await SecureStore.deleteItemAsync(`${BIOMETRICS_ENABLED_KEY}_${user.id}`);
+        await fetch(`${API_URL}/users/${user.id}/biometrics`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: false }),
+        });
         set({ isBiometricsEnabled: false });
         Alert.alert('Sucesso', 'Autenticação biométrica desativada!');
       }
@@ -171,29 +152,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginWithBiometrics: async () => {
     try {
-      const userJson = await SecureStore.getItemAsync(CURRENT_USER_KEY);
-      if (!userJson) {
-        throw new Error('Nenhum usuário encontrado para autenticação biométrica');
-      }
-      
-      const user = JSON.parse(userJson);
-      const biometricsEnabled = await SecureStore.getItemAsync(`${BIOMETRICS_ENABLED_KEY}_${user.id}`);
-      
-      if (biometricsEnabled !== 'true') {
-        throw new Error('Autenticação biométrica não está configurada para este usuário');
-      }
-
+      const { user } = get();
+      if (!user)
+        throw new Error(
+          'Nenhum usuário encontrado para autenticação biométrica'
+        );
+      const bioRes = await fetch(`${API_URL}/users/${user.id}/biometrics`);
+      const bioData = await bioRes.json();
+      if (!bioData.enabled)
+        throw new Error(
+          'Autenticação biométrica não está configurada para este usuário'
+        );
       const biometricAuth = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Entrar com biometria',
         disableDeviceFallback: false,
       });
-
       if (biometricAuth.success) {
-        set({ 
-          isAuthenticated: true, 
-          user,
-          isBiometricsEnabled: true 
-        });
+        set({ isAuthenticated: true, isBiometricsEnabled: true });
       } else {
         throw new Error('Autenticação biométrica falhou');
       }
@@ -206,36 +181,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { user } = get();
       if (!user) throw new Error('Usuário não encontrado');
-
-      // Update user in users store
-      const usersJson = await SecureStore.getItemAsync(USERS_KEY);
-      const users = usersJson ? JSON.parse(usersJson) : {};
-      users[user.email] = { ...users[user.email], avatar: avatarUri };
-      await SecureStore.setItemAsync(USERS_KEY, JSON.stringify(users));
-
-      // Update current user
-      const updatedUser = { ...user, avatar: avatarUri };
-      await SecureStore.setItemAsync(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-      set({ user: updatedUser });
+      const res = await fetch(`${API_URL}/users/${user.id}/avatar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: avatarUri }),
+      });
+      if (!res.ok) throw new Error('Falha ao atualizar avatar');
+      set({ user: { ...user, avatar: avatarUri } });
     } catch (error: any) {
       throw new Error('Falha ao atualizar avatar');
     }
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync(CURRENT_USER_KEY);
     set({ isAuthenticated: false, user: null, isBiometricsEnabled: false });
   },
 
   checkBiometricsAvailable: async () => {
     if (Platform.OS === 'web') return false;
-    
     const { user } = get();
     if (!user) return false;
-
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-    const isEnabled = await SecureStore.getItemAsync(`${BIOMETRICS_ENABLED_KEY}_${user.id}`);
-    return hasHardware && isEnrolled && isEnabled === 'true';
+    const bioRes = await fetch(`${API_URL}/users/${user.id}/biometrics`);
+    const bioData = await bioRes.json();
+    return hasHardware && isEnrolled && !!bioData.enabled;
   },
 }));

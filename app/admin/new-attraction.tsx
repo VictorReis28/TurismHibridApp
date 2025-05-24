@@ -14,7 +14,9 @@ import { useLocationStore } from '@/stores/location';
 import { darkTheme, lightTheme } from '@/styles/theme';
 import { router } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// URL base da API
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 
 export default function NewAttraction() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
@@ -65,22 +67,27 @@ export default function NewAttraction() {
     }
 
     const newAttraction = {
-      ...form,
-      image: form.image || require('@/assets/images/AtNotFound.png'),
+      name: form.name,
+      description: form.description,
+      category: form.category,
+      image: form.image || null,
+      latitude: lat,
+      longitude: lng,
     };
 
     try {
-      const storedAttractions = await AsyncStorage.getItem('attractions');
-      const attractions = storedAttractions
-        ? JSON.parse(storedAttractions)
-        : [];
-
-      attractions.push(newAttraction);
-
-      await AsyncStorage.setItem('attractions', JSON.stringify(attractions));
-
+      const res = await fetch(`${API_URL}/attractions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAttraction),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Erro ao salvar atração');
+      }
       Alert.alert('Sucesso', 'Atração cadastrada com sucesso!');
       router.back();
+      // Opcional: pode emitir um evento ou usar contexto para recarregar lista na tela anterior
     } catch (error) {
       console.error('Erro ao salvar atração:', error);
       Alert.alert('Erro', 'Não foi possível salvar a atração');
